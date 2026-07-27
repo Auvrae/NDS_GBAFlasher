@@ -2,8 +2,11 @@
 # Author: Ryan Souders (HonkeyKong)
 cmake_minimum_required(VERSION 3.13)
 
-set(DEVKITPRO /opt/devkitpro)
-set(CMAKE_TOOLCHAIN_FILE ${DEVKITPRO}/cmake/NDS.cmake)
+# Define Toolchain prior to project
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    set(DEVKITPRO /opt/devkitpro)
+    set(CMAKE_TOOLCHAIN_FILE ${DEVKITPRO}/cmake/NDS.cmake)
+endif()
 
 project(GBAFlasher C CXX ASM)
 
@@ -11,8 +14,8 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/res/src)
 
 set(NDS_TITLE "GBA Flasher")
-set(NDS_LINE1 "By HonkeyKong")
-set(NDS_LINE2 "http://www.honkeykong.org/")
+set(NDS_LINE1 "By HonkeyKong / Auv")
+set(NDS_LINE2 "https://github.com/HonkeyKong/NDS_GBAFlasher")
 set(NDS_ICON "${CMAKE_SOURCE_DIR}/res/gfx/gbaflash.bmp")
 
 # Directories where resource files are located
@@ -25,22 +28,26 @@ set(FONT_PNG "${GFX_DIR}/font/font.png")
 set(BG_SRC "${CMAKE_SOURCE_DIR}/res/src/gfx/guibg.c")
 set(FONT_SRC "${CMAKE_SOURCE_DIR}/res/src/gfx/font.c")
 
+# Graphics conversion
 add_custom_command(
     OUTPUT ${FONT_SRC}
-    COMMAND grit ${FONT_PNG} -gt -gB4 -pn16 -ftc -o${FONT_SRC}
+    COMMAND grit ${FONT_PNG} -gt -gB4 -pn16 -ftc -o ${FONT_SRC}
     DEPENDS ${FONT_PNG}
     COMMENT "Converting font..."
-    VERBATIM )
+    VERBATIM
+)
 
 add_custom_command(
     OUTPUT ${BG_SRC}
-    COMMAND grit ${BG_PNG} -gt -gB4 -mRtf -pn16 -ftc -o${BG_SRC}
+    COMMAND grit ${BG_PNG} -gt -gB4 -mRtf -pn16 -ftc -o ${BG_SRC}
     DEPENDS ${BG_PNG}
     COMMENT "Converting background..."
-    VERBATIM )
+    VERBATIM
+)
 
 add_custom_target(generate_gfx DEPENDS ${BG_SRC} ${FONT_SRC})
 
+# Audio / Soundbank conversion
 set(SFX_HEADER "${CMAKE_SOURCE_DIR}/res/src/sfx/soundbank.h")
 set(SFX_BIN "${CMAKE_SOURCE_DIR}/res/src/sfx/soundbank.bin")
 set(SB_HEADER "${CMAKE_SOURCE_DIR}/res/src/sfx/sb.h")
@@ -48,38 +55,45 @@ set(SB_ASM "${CMAKE_SOURCE_DIR}/res/src/sfx/sb.s")
 
 add_custom_command(
     OUTPUT ${SFX_BIN} ${SFX_HEADER}
-    COMMAND mmutil ${WAV_FILES} -d -o${SFX_BIN} -h${SFX_HEADER}
-
+    COMMAND mmutil -d -o${SFX_BIN} -h${SFX_HEADER} ${WAV_FILES}
     DEPENDS ${WAV_FILES}
     COMMENT "Generating MaxMod soundbank..."
-    VERBATIM )
+    VERBATIM
+)
 
 add_custom_target(generate_soundbank DEPENDS ${SFX_BIN} ${SFX_HEADER})
 
+# Convert binary soundbank to ASM source
 add_custom_command(
     OUTPUT ${SB_HEADER} ${SB_ASM}
-    COMMAND bin2s -H ${SB_HEADER} ${SFX_BIN} > ${SB_ASM}
+    COMMAND ${CMAKE_COMMAND} -E env -- ${DEVKITPRO}/tools/bin/bin2s -H ${SB_HEADER} ${SFX_BIN} > ${SB_ASM}
     DEPENDS ${SFX_BIN}
     COMMENT "Generating Soundbank header..."
-    VERBATIM )
+)
 
 add_custom_target(generate_sb_header DEPENDS ${SB_HEADER} ${SB_ASM})
-                
-set( SOURCE_FILES
-${BG_SRC}
-${SB_ASM}
-${FONT_SRC}
-src/gfx.c
-src/text.c
-src/main.c
-src/audio.c
-src/files.c
-src/flash.c
-src/input.c )
             
-add_executable( GBAFlasher ${SOURCE_FILES} )
-add_dependencies( GBAFlasher generate_gfx )
-add_dependencies(GBAFlasher generate_soundbank)
-add_dependencies( GBAFlasher generate_sb_header )
-target_link_libraries( GBAFlasher nds9 fat mm9 )
-nds_create_rom(GBAFlasher NAME ${NDS_TITLE} SUBTITLE1 ${NDS_LINE1} SUBTITLE2 ${NDS_LINE2} ICON ${NDS_ICON})
+set(SOURCE_FILES
+    ${BG_SRC}
+    ${SB_ASM}
+    ${FONT_SRC}
+    src/gfx.c
+    src/text.c
+    src/main.c
+    src/audio.c
+    src/files.c
+    src/flash.c
+    src/input.c
+)
+            
+add_executable(GBAFlasher ${SOURCE_FILES})
+add_dependencies(GBAFlasher generate_gfx generate_soundbank generate_sb_header)
+
+target_link_libraries(GBAFlasher nds9 fat mm9)
+
+nds_create_rom(GBAFlasher 
+    NAME ${NDS_TITLE} 
+    SUBTITLE1 ${NDS_LINE1} 
+    SUBTITLE2 ${NDS_LINE2} 
+    ICON ${NDS_ICON}
+)

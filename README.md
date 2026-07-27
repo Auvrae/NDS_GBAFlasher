@@ -1,5 +1,7 @@
 ## GBA Flasher for Nintendo DS
 
+This fork of was purposely crafted to only realistically support ChisFlash carts. I'm thinking about remaking the whole library to support all different types of carts. But I don't own many. It's a big maybe. 
+
 This program can load a GBA ROM from a Slot-1 flashcart like the R4, and flash it to one of those cheap bootleg GBA carts you can find everywhere on [AliExpress](https://www.aliexpress.us/w/wholesale-GBA%20cartridge.html). Right now, the 8MB (Link to the Past) and 16MB (Minish Cap/Pokemon) cartridges are supported, and probably other games of the same size. 32MB carts (like Kingdom Hearts) will probably come after I get my hands on one.
 
 To build the software, just run this from the project root:  

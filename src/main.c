@@ -41,15 +41,38 @@ int main(void) {
     }
 
     uint16_t chipType = DetectChipType();
+    
+    // Handle chip identification (supports both MB capacity and Megabit returns)
     switch (chipType) {
         case 8:
+        case 64: // 64 Mb
             RenderLine(0, "Detected S29GL064N (8MB)", 6);
             cartSize = (8 * 1024 * 1024);
             break;
+
         case 16:
-            RenderLine(0, "Detected S29GL128N (16MB)", 6);
+        case 128: // 128 Mb
+            RenderLine(0, "Detected S29GL128S (16MB)", 6);
             cartSize = (16 * 1024 * 1024);
             break;
+
+        case 32:
+        case 256: // 256 Mb
+            RenderLine(0, "Detected S29GL256S (32MB)", 6);
+            cartSize = (32 * 1024 * 1024);
+            break;
+
+        case 640: // Distinct from 64
+        case 512: // 512 Mb
+            RenderLine(0, "Detected S29GL512S (64MB)", 6);
+            cartSize = (64 * 1024 * 1024);
+            break;
+
+        case 1024: // 1 Gb
+            RenderLine(0, "Detected S29GL01GS (128MB)", 6);
+            cartSize = (128 * 1024 * 1024);
+            break;
+
         default:
             RenderLine(0, "Unknown cart type.", 6);
             infiniteLoop();

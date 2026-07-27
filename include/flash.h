@@ -1,24 +1,35 @@
 #ifndef FLASH_H
 #define FLASH_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdint.h>
 #include <stdbool.h>
 
 #define CHUNK_SIZE (128 * 1024)
 
-void FlashROM();
-bool QueryCFI();
-uint16_t DetectChipType();
-uint8_t readByte(int addr);
-void EraseSector(uint32_t address);
-bool LoadAndFlashROM(const char* filename);
-void WriteData(uint32_t address, const uint8_t* data, uint32_t size);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// External variables provided by flash.c
+extern bool bitSwapped;
+extern uint32_t cartSize;
+extern uint32_t totalSectors;
+
+// Core Initialization & CFI Functions
+void FlashReset(void);
+void UnlockDYBProtection(void);
+bool QueryCFI(void);
+uint16_t DetectChipType(void);
+
+// Flash Operations
+bool WaitUntilReady(uint32_t wordAddress);
+bool EraseSector(uint32_t byteAddress);
+bool WriteBuffer(uint32_t byteAddress, const uint16_t* bufferWords, uint16_t wordCount);
+bool WriteData(uint32_t byteAddress, const uint8_t* data, uint32_t size);
 bool VerifyData(uint32_t address, const uint8_t* data, uint32_t size);
-void WriteROMToCartridge(const uint8_t* romData, uint32_t romSize);
+
+// High-level Operations
+bool LoadAndFlashROM(const char* filename);
 
 #ifdef __cplusplus
 }
